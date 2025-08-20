@@ -1,5 +1,5 @@
 import { Inngest } from "inngest";
-import User from "./Models/User.js";
+import User from "../Models/User.js";
 
 // Create a client to send and receive events
 export const inngest = new Inngest({ id: "my-app" });
@@ -8,7 +8,7 @@ export const inngest = new Inngest({ id: "my-app" });
 const syncUserCreation = inngest.createFunction(
   { id: "sync-user-from-clerk" },
   { event: "clerk/user.created" },
-  async ({ event}) => {
+  async ({ event }) => {
     const { id, first_name, last_name, email_addresses, image_url } =
       event.data;
     let username = email_addresses[0].email_address.split("@")[0];
@@ -53,9 +53,7 @@ const deleteUser = inngest.createFunction(
   { id: "delete-user-with-clerk" },
   { event: "clerk/user.deleted" },
   async ({ event }) => {
-    const { id } =
-      event.data;
-  
+    const { id } = event.data;
 
     //
     await User.findByIdAndDelete(id);
@@ -63,4 +61,4 @@ const deleteUser = inngest.createFunction(
 );
 
 // Create an empty array where we'll export future Inngest functions
-export const functions = [syncUserCreation, updatedUserData,deleteUser];
+export const functions = [syncUserCreation, syncUserUpdate, deleteUser];

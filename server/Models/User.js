@@ -1,4 +1,4 @@
-import mongoose, { connection } from "mongoose";
+import mongoose from "mongoose";
 
 const UserSchema = new mongoose.Schema(
   {
@@ -33,20 +33,19 @@ const UserSchema = new mongoose.Schema(
     },
     followers: [
       {
-        type: string,
+        type: String,
         ref: "User",
       },
     ],
     following: [
       {
-        type: string,
+        type: String,
         ref: "User",
       },
     ],
-
     connections: [
       {
-        type: string,
+        type: String,
         ref: "User",
       },
     ],
