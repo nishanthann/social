@@ -1,6 +1,9 @@
 import { Inngest } from "inngest";
 import User from "../Models/User.js";
-
+import Connection from "../Models/Connection.js";
+import dotenv from "dotenv";
+import sendEmail from "../configs/nodeMailer.js";
+dotenv.config();
 // Create a client to send and receive events
 export const inngest = new Inngest({ id: "my-app" });
 
@@ -60,5 +63,91 @@ const deleteUser = inngest.createFunction(
   }
 );
 
+// INGEST FUNCTION TO SEND REMINDER WHAT NEW CONNECTION REQUEST ADDED
+const sendNewConnectionRequestReminder = inngest.createFunction(
+  { id: "send-new-connection-request-reminder" },
+  { event: "app/connection-request" },
+  async ({ event, step }) => {
+    const { connectionId } = event.data;
+    await step.run("send-connection-request-mail", async () => {
+      const connection = await Connection.findById(connectionId).populate(
+        "from_user_id to_user_id"
+      );
+      const subject = "New Connection Request";
+      const body = `
+  <div style="background-color: #f3f4f6; padding: 2.5rem; border-radius: 1rem; text-align: center; max-width: 600px; margin: 2rem auto;">
+    <div style="background-color: white; padding: 2rem; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+      <h2 style="font-size: 1.5rem; font-weight: 700; color: #1f2937; margin-bottom: 1rem;">New Connection Request</h2>
+      <p style="font-size: 1rem; color: #4b5563; line-height: 1.5rem;">
+        You have a new connection request from <span style="font-weight: 600; color: #4338ca;">${connection.from_user_id.full_name}</span> - <span style="color: #6b7280; font-style: italic;">@${connection.from_user_id.username}</span>
+      </p>
+      <div style="margin-top: 2rem;">
+        <a href="${process.env.FRONTEND_URL}/connections" style="display: inline-block; background-color: #4338ca; color: #ffffff; padding: 0.75rem 1.5rem; border-radius: 0.5rem; text-decoration: none; font-weight: 600;">
+          Check the Request
+        </a>
+      </div>
+      <br/>
+      <p style="font-size: 0.875rem; color: #6b7280; margin-top: 2rem;">
+        Thank you
+      </p>
+      <p style="font-size: 0.875rem; color: #6b7280;">
+        Social App
+      </p>
+    </div>
+  </div>
+`;
+      await sendEmail({
+        to: connection.to_user_id.email,
+        subject,
+        body,
+      });
+    });
+    const in24Hours = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await step.sleepUntil("send-reminder-mail", in24Hours);
+    await step.run("send-connection-request-reminder", async () => {
+      const connection = await Connection.findById(connectionId).populate(
+        "from_user_id to_user_id"
+      );
+      if (connection.status === "accepted") {
+        return { message: "connection request accepted" };
+      }
+      const subject = "New Connection Request";
+      const body = `
+  <div style="background-color: #f3f4f6; padding: 2.5rem; border-radius: 1rem; text-align: center; max-width: 600px; margin: 2rem auto;">
+    <div style="background-color: white; padding: 2rem; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+      <h2 style="font-size: 1.5rem; font-weight: 700; color: #1f2937; margin-bottom: 1rem;">New Connection Request</h2>
+      <p style="font-size: 1rem; color: #4b5563; line-height: 1.5rem;">
+        You have a new connection request from <span style="font-weight: 600; color: #4338ca;">${connection.from_user_id.full_name}</span> - <span style="color: #6b7280; font-style: italic;">@${connection.from_user_id.username}</span>
+      </p>
+      <div style="margin-top: 2rem;">
+        <a href="${process.env.FRONTEND_URL}/connections" style="display: inline-block; background-color: #4338ca; color: #ffffff; padding: 0.75rem 1.5rem; border-radius: 0.5rem; text-decoration: none; font-weight: 600;">
+          Check the Request
+        </a>
+      </div>
+      <br/>
+      <p style="font-size: 0.875rem; color: #6b7280; margin-top: 2rem;">
+        Thank you
+      </p>
+      <p style="font-size: 0.875rem; color: #6b7280;">
+        Social App
+      </p>
+    </div>
+  </div>
+`;
+      await sendEmail({
+        to: connection.to_user_id.email,
+        subject,
+        body,
+      });
+      return { message: "reminder email sent" };
+    });
+  }
+);
+
 // Create an empty array where we'll export future Inngest functions
-export const functions = [syncUserCreation, syncUserUpdate, deleteUser];
+export const functions = [
+  syncUserCreation,
+  syncUserUpdate,
+  deleteUser,
+  sendNewConnectionRequestReminder,
+];

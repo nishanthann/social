@@ -27,6 +27,10 @@ const UserSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    cover_photo: {
+      type: String,
+      default: "",
+    },
     location: {
       type: String,
       default: "",

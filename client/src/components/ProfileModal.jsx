@@ -10,6 +10,7 @@ const ProfileModal = ({ onClose }) => {
     location: user.location,
     profile_picture: null,
     full_name: user.full_name,
+    cover_photo: user.cover_photo,
   });
 
   const handleChange = (e) => {
@@ -20,7 +21,9 @@ const ProfileModal = ({ onClose }) => {
   const handleFileChange = (e) => {
     setEditForm({ ...editForm, profile_picture: e.target.files[0] });
   };
-
+  const handleCoverChange = (e) => {
+    setEditForm({ ...editForm, cover_photo: e.target.files[0] });
+  };
   const handleSaveProfile = async (e) => {
     e.preventDefault();
     console.log("Profile saved:", editForm);
@@ -43,40 +46,72 @@ const ProfileModal = ({ onClose }) => {
         </h1>
 
         <form className="space-y-5" onSubmit={handleSaveProfile}>
-          {/* Profile Picture */}
-          <div className="flex flex-col items-center gap-3">
-            <label
-              htmlFor="profile_picture"
-              className="cursor-pointer relative w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center border-2 border-dashed hover:bg-gray-200"
-            >
-              {editForm.profile_picture ? (
-                // Preview newly selected file
-                <img
-                  src={URL.createObjectURL(editForm.profile_picture)}
-                  alt="Preview"
-                  className="w-24 h-24 object-cover rounded-full"
-                />
-              ) : user.profile_picture ? (
-                // Show existing profile picture
-                <img
-                  src={user.profile_picture}
-                  alt={user.full_name}
-                  className="w-24 h-24 object-cover rounded-full"
-                />
-              ) : (
-                // Placeholder icon if nothing
-                <ImageIcon className="w-8 h-8 text-gray-500" />
-              )}
+          {/* Profile Picture + Cover Photo in same row */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+            {/* Profile Picture */}
+            <div className="flex flex-col items-center gap-3">
+              <label
+                htmlFor="profile_picture"
+                className="cursor-pointer relative w-24 h-24 rounded-full bg-gray-100 flex items-center justify-center border-2 border-dashed hover:bg-gray-200"
+              >
+                {editForm.profile_picture instanceof File ? (
+                  <img
+                    src={URL.createObjectURL(editForm.profile_picture)}
+                    alt="Preview"
+                    className="w-24 h-24 object-cover rounded-full"
+                  />
+                ) : user.profile_picture ? (
+                  <img
+                    src={user.profile_picture}
+                    alt={user.full_name}
+                    className="w-24 h-24 object-cover rounded-full"
+                  />
+                ) : (
+                  <ImageIcon className="w-8 h-8 text-gray-500" />
+                )}
 
-              <input
-                type="file"
-                id="profile_picture"
-                accept="image/*"
-                hidden
-                onChange={handleFileChange}
-              />
-            </label>
-            <p className="text-sm text-gray-500">Change Profile Picture</p>
+                <input
+                  type="file"
+                  id="profile_picture"
+                  accept="image/*"
+                  hidden
+                  onChange={handleFileChange}
+                />
+              </label>
+              <p className="text-sm text-gray-500">Profile Picture</p>
+            </div>
+
+            {/* Cover Photo */}
+            <div className="flex flex-col items-center gap-3 w-full">
+              <label
+                htmlFor="cover_photo"
+                className="cursor-pointer relative w-full h-24 rounded-lg bg-gray-100 flex items-center justify-center border-2 border-dashed hover:bg-gray-200"
+              >
+                {editForm.cover_photo instanceof File ? (
+                  <img
+                    src={URL.createObjectURL(editForm.cover_photo)}
+                    alt="Cover Preview"
+                    className="w-full h-24 object-cover rounded-lg"
+                  />
+                ) : user.cover_photo ? (
+                  <img
+                    src={user.cover_photo}
+                    alt="Cover"
+                    className="w-full h-24 object-cover rounded-lg"
+                  />
+                ) : (
+                  <ImageIcon className="w-8 h-8 text-gray-500" />
+                )}
+                <input
+                  type="file"
+                  id="cover_photo"
+                  accept="image/*"
+                  hidden
+                  onChange={handleCoverChange}
+                />
+              </label>
+              <p className="text-sm text-gray-500">Cover Photo</p>
+            </div>
           </div>
 
           {/* Full Name */}
