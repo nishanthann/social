@@ -7,6 +7,8 @@ import { clerkMiddleware } from "@clerk/express";
 
 import { serve } from "inngest/express";
 import userRouter from "./routes/usesRoutes.js";
+import postRouter from "./routes/postRoutes.js";
+import storyRouter from "./routes/storyRoutes.js";
 
 // FOBgYXhUwNb3122l
 // nizhanth23
@@ -23,5 +25,7 @@ app.use(clerkMiddleware());
 app.get("/", (req, res) => res.send("server is running✅"));
 app.use("/api/inngest", serve({ client: inngest, functions }));
 app.use("/api/user", userRouter);
+app.use("/api/post", postRouter);
+app.use("/api/story", storyRouter);
 
 app.listen(PORT, () => console.log(`server is running✅ on port ${PORT}`));

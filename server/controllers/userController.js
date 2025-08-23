@@ -3,6 +3,8 @@ import fs from "fs";
 import User from "../Models/User.js";
 import imagekit from "../configs/imageKit.js";
 import Connection from "../Models/Connection.js";
+import Post from "../Models/Post.js";
+import { inngest } from "../inngest/index.js";
 
 export const getUserData = async (req, res) => {
   try {
@@ -204,7 +206,17 @@ export const sendConnectionRequest = async (req, res) => {
       ],
     });
     if (!connection) {
-      await Connection.create({ from_user_id: userId, to_user_id: id });
+      const newConnection = await Connection.create({
+        from_user_id: userId,
+        to_user_id: id,
+      });
+
+      await inngest.send({
+        name: "app/connection-request",
+        data: {
+          connectionId: newConnection._id,
+        },
+      });
       return res.json({ success: true, message: "connection request sent" });
     } else if (connection.status === "accepted") {
       return res.json({ success: false, message: "already connected" });
@@ -272,6 +284,24 @@ export const acceptConnectionRequest = async (req, res) => {
     connection.status = "accepted";
     await connection.save();
     return res.json({ success: true, message: "connection request accepted" });
+  } catch (error) {
+    console.log(error);
+    return res.json({ success: false, message: error.message });
+  }
+};
+
+// get other user orofile and post
+
+export const getOtherUserProfile = async (req, res) => {
+  try {
+    const { profileId } = req.body;
+    const profile = await User.findById(profileId);
+    if (!profile) {
+      return res.json({ success: false, message: "profile not found" });
+    }
+    const posts = await Post.find({ user: profileId }).populate("user");
+
+    return res.json({ success: true, profile, posts });
   } catch (error) {
     console.log(error);
     return res.json({ success: false, message: error.message });

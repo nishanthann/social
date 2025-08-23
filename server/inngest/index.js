@@ -3,6 +3,7 @@ import User from "../Models/User.js";
 import Connection from "../Models/Connection.js";
 import dotenv from "dotenv";
 import sendEmail from "../configs/nodeMailer.js";
+import Story from "../Models/Story.js";
 dotenv.config();
 // Create a client to send and receive events
 export const inngest = new Inngest({ id: "my-app" });
@@ -144,10 +145,26 @@ const sendNewConnectionRequestReminder = inngest.createFunction(
   }
 );
 
+// ingest function to delete a story 24hrs
+const deleteStory = inngest.createFunction(
+  { id: "story-delete" },
+  { event: "app/story.delete" },
+  async ({ event, stop }) => {
+    const { storyId } = event.data;
+    const in24Hours = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await step.sleepUntil("wait-for-24hrs", in24Hours);
+    await step.run("delete-story", async () => {
+      await Story.findByIdAndDelete(storyId);
+      return { message: "story deleted" };
+    });
+  }
+);
+
 // Create an empty array where we'll export future Inngest functions
 export const functions = [
   syncUserCreation,
   syncUserUpdate,
   deleteUser,
   sendNewConnectionRequestReminder,
+  deleteStory,
 ];
