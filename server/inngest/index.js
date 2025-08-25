@@ -4,6 +4,7 @@ import Connection from "../Models/Connection.js";
 import dotenv from "dotenv";
 import sendEmail from "../configs/nodeMailer.js";
 import Story from "../Models/Story.js";
+import Message from "../Models/Message.js";
 dotenv.config();
 // Create a client to send and receive events
 export const inngest = new Inngest({ id: "my-app" });
@@ -160,6 +161,52 @@ const deleteStory = inngest.createFunction(
   }
 );
 
+// send notification to unseen messages
+
+const sendUnseenMessageNotification = inngest.createFunction(
+  { id: "send-unseen-message-notification" },
+  { cron: "TZ=Asia/Kolkata */5 * * * *" },
+  async ({ step }) => {
+    const message = await Message.find({ seen: false }).populate("to_user_id");
+    const unseenCount = {};
+    message.map((msg) => {
+      (unseenCount[msg.to_user_id._id] || 0) + 1;
+    });
+    for (const userId in object) {
+      const user = await User.findById(userId);
+      const subject = "Unseen Messages Reminder";
+      const body = `
+  <div style="background-color: #f3f4f6; padding:20px; border-radius: 1rem; text-align: center; max-width: 600px; margin: 2rem auto;">
+    <div style="background-color: white; padding: 2rem; border-radius: 0.75rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+      <h2 style="font-size: 1.5rem; font-weight: 700; color: #1f2937; margin-bottom: 1rem;">Unseen Messages Reminder</h2>
+      <p style="font-size: 1rem; color: #4b5563; line-height: 1.5rem;">
+        You have <span style="font-weight: 600; color: #4338ca;">${unseenCount[userId]}</span> unseen messages. Please check your inbox to stay updated.
+      </p>
+      <div style="margin-top: 2rem;">
+        <a href="${process.env.FRONTEND_URL}/messages" style="display: inline-block; background-color: #4338ca; color: #ffffff; padding: 0.75rem 1.5rem; border-radius: 0.5rem; text-decoration: none; font-weight: 600;">
+          Go to Messages
+        </a>
+      </div>
+      <br/>
+      <p style="font-size: 0.875rem; color: #6b7280; margin-top: 2rem;">
+        Thank you
+      </p>
+      <p style="font-size: 0.875rem; color: #6b7280;">
+        Social App
+      </p>
+    </div>
+  </div>
+`;
+      await sendEmail({
+        to: user.email,
+        subject,
+        body,
+      });
+    }
+    return { message: "unseen message notification sent" };
+  }
+);
+
 // Create an empty array where we'll export future Inngest functions
 export const functions = [
   syncUserCreation,
@@ -167,4 +214,5 @@ export const functions = [
   deleteUser,
   sendNewConnectionRequestReminder,
   deleteStory,
+  sendUnseenMessageNotification,
 ];
